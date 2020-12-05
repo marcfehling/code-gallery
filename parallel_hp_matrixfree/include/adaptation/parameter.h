@@ -13,8 +13,8 @@
 //
 // ---------------------------------------------------------------------
 
-#ifndef adaptation_parameters_h
-#define adaptation_parameters_h
+#ifndef adaptation_parameter_h
+#define adaptation_parameter_h
 
 
 #include <deal.II/base/parameter_acceptor.h>
@@ -22,9 +22,8 @@
 
 namespace Adaptation
 {
-  class Parameters : public dealii::ParameterAcceptor
+  struct Parameters : public dealii::ParameterAcceptor
   {
-  public:
     Parameters()
       : dealii::ParameterAcceptor("adaptation")
     {
@@ -53,21 +52,11 @@ namespace Adaptation
       add_parameter("pcoarsenfraction", p_coarsen_fraction);
     }
 
-  private:
     unsigned int min_level, max_level;
     unsigned int min_degree, max_degree;
 
     double total_refine_fraction, total_coarsen_fraction;
     double p_refine_fraction, p_coarsen_fraction;
-
-    template <int dim, typename VectorType, int spacedim>
-    friend class h;
-    template <int dim, typename VectorType, int spacedim>
-    friend class hpFourier;
-    template <int dim, typename VectorType, int spacedim>
-    friend class hpHistory;
-    template <int dim, typename VectorType, int spacedim>
-    friend class hpLegendre;
   };
 } // namespace Adaptation
 

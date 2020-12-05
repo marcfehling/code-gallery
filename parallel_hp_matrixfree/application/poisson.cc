@@ -174,12 +174,10 @@ namespace Poisson
 
 
 
-  class OperatorParameters : public ParameterAcceptor
+  struct OperatorParameters : public ParameterAcceptor
   {
-  public:
     OperatorParameters();
 
-  private:
     std::string type;
 
     template <int dim, typename number>
@@ -197,12 +195,10 @@ namespace Poisson
 
 
 
-  class SolverParameters : public ParameterAcceptor
+  struct SolverParameters : public ParameterAcceptor
   {
-  public:
     SolverParameters();
 
-  private:
     std::string type;
 
     friend class SolverAMG;
@@ -220,13 +216,11 @@ namespace Poisson
 
 
 
-  class ProblemParameters : public ParameterAcceptor
+  struct ProblemParameters : public ParameterAcceptor
   {
-  public:
     ProblemParameters();
 
-  private:
-    unsigned int dim;
+    unsigned int dimension;
     unsigned int n_cycles;
     std::string  adaptation_type;
 
@@ -241,8 +235,8 @@ namespace Poisson
   ProblemParameters::ProblemParameters()
     : ParameterAcceptor("problem")
   {
-    dim = 2;
-    add_parameter("dimension", dim);
+    dimension = 2;
+    add_parameter("dimension", dimension);
 
     n_cycles = 8;
     add_parameter("ncycles", n_cycles);
@@ -1667,8 +1661,7 @@ namespace Poisson
           {
             create_coarse_grid();
 
-            const unsigned int min_level =
-              ParameterAcceptor::prm.get_integer({"adaptation"}, "minlevel");
+            const unsigned int min_level = prm.prm_adaptation.min_level;
             triangulation.refine_global(
               prm.adaptation_type != "hp_History" ? min_level : min_level - 1);
           }
@@ -1728,8 +1721,7 @@ main(int argc, char *argv[])
                         output_filename = (argc > 1) ? "" : "poisson.json";
       ParameterAcceptor::initialize(filename, output_filename);
 
-      const int dim =
-        ParameterAcceptor::prm.get_integer({"problem"}, "dimension");
+      const int dim = prm_problem.dimension;
       if (dim == 2)
         {
           PoissonProblem<2> poisson_problem(prm_problem);
