@@ -17,15 +17,20 @@
 #define adaptation_hp_fourier_h
 
 
-#include <adaptation/base.h>
-#include <adaptation/parameter.h>
 #include <deal.II/distributed/tria.h>
+
 #include <deal.II/dofs/dof_handler.h>
+
 #include <deal.II/fe/fe_series.h>
+
 #include <deal.II/hp/fe_collection.h>
 #include <deal.II/hp/q_collection.h>
+
 #include <deal.II/lac/la_parallel_vector.h>
 #include <deal.II/lac/vector.h>
+
+#include <adaptation/base.h>
+#include <adaptation/parameter.h>
 
 
 namespace Adaptation

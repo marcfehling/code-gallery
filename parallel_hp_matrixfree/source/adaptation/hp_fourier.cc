@@ -14,12 +14,16 @@
 // ---------------------------------------------------------------------
 
 
-#include <adaptation/hp_fourier.h>
 #include <deal.II/base/quadrature_lib.h>
+
 #include <deal.II/distributed/grid_refinement.h>
+
 #include <deal.II/hp/refinement.h>
+
 #include <deal.II/numerics/error_estimator.h>
 #include <deal.II/numerics/smoothness_estimator.h>
+
+#include <adaptation/hp_fourier.h>
 
 using namespace dealii;
 

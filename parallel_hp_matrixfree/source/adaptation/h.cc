@@ -14,11 +14,14 @@
 // ---------------------------------------------------------------------
 
 
-#include <adaptation/h.h>
 #include <deal.II/base/exceptions.h>
 #include <deal.II/base/quadrature_lib.h>
+
 #include <deal.II/distributed/grid_refinement.h>
+
 #include <deal.II/numerics/error_estimator.h>
+
+#include <adaptation/h.h>
 
 using namespace dealii;
 

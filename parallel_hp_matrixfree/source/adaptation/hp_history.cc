@@ -14,11 +14,15 @@
 // ---------------------------------------------------------------------
 
 
-#include <adaptation/hp_history.h>
 #include <deal.II/base/quadrature_lib.h>
+
 #include <deal.II/distributed/grid_refinement.h>
+
 #include <deal.II/hp/refinement.h>
+
 #include <deal.II/numerics/error_estimator.h>
+
+#include <adaptation/hp_history.h>
 
 using namespace dealii;
 
