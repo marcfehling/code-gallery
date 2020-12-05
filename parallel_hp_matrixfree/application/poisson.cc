@@ -104,6 +104,7 @@ namespace LA
 #include <adaptation/hp_history.h>
 #include <adaptation/hp_legendre.h>
 #include <adaptation/parameter.h>
+#include <functions/reentrant_corner.h>
 
 #include <fstream>
 #include <iostream>
@@ -243,73 +244,6 @@ namespace Poisson
 
     adaptation_type = "hp_Legendre";
     add_parameter("adaptationtype", adaptation_type);
-  }
-
-
-
-  // @sect3{The <code>Solution</code> class template}
-
-  // Analytic solution for the scenario described above.
-  template <int dim>
-  class Solution : public Function<dim>
-  {
-  public:
-    Solution(const double alpha = 2. / 3.)
-      : Function<dim>()
-      , alpha(alpha)
-    {
-      Assert(dim > 1, ExcNotImplemented());
-      Assert(alpha > 0, ExcLowerRange(alpha, 0));
-    }
-
-    virtual double
-    value(const Point<dim> &p, const unsigned int component = 0) const override;
-
-    virtual Tensor<1, dim>
-    gradient(const Point<dim> & p,
-             const unsigned int component = 0) const override;
-
-  private:
-    const double alpha;
-  };
-
-
-
-  template <int dim>
-  double
-  Solution<dim>::value(const Point<dim> &p,
-                       const unsigned int /*component*/) const
-  {
-    const std::array<double, dim> p_sphere =
-      GeometricUtilities::Coordinates::to_spherical(p);
-
-    return std::pow(p_sphere[0], alpha) * std::sin(alpha * p_sphere[1]);
-  }
-
-
-
-  template <int dim>
-  Tensor<1, dim>
-  Solution<dim>::gradient(const Point<dim> &p,
-                          const unsigned int /*component*/) const
-  {
-    const std::array<double, dim> p_sphere =
-      GeometricUtilities::Coordinates::to_spherical(p);
-
-    std::array<double, dim> ret_sphere;
-    // only for polar coordinates
-    const double fac = alpha * std::pow(p_sphere[0], alpha - 1);
-    ret_sphere[0]    = fac * std::sin(alpha * p_sphere[1]);
-    ret_sphere[1]    = fac * std::cos(alpha * p_sphere[1]);
-
-    // transform back to cartesian coordinates
-    // by considering polar unit vectors
-    Tensor<1, dim> ret;
-    ret[0] = ret_sphere[0] * std::cos(p_sphere[1]) -
-             ret_sphere[1] * std::sin(p_sphere[1]);
-    ret[1] = ret_sphere[0] * std::sin(p_sphere[1]) +
-             ret_sphere[1] * std::cos(p_sphere[1]);
-    return ret;
   }
 
 
@@ -1420,7 +1354,7 @@ namespace Poisson
     DoFTools::make_hanging_node_constraints(dof_handler, constraints);
     VectorTools::interpolate_boundary_values(dof_handler,
                                              0,
-                                             Solution<dim>(),
+                                             ReentrantCorner<dim>(),
                                              constraints);
 
 #ifdef DEBUG
@@ -1567,7 +1501,7 @@ namespace Poisson
     Vector<float> difference_per_cell(triangulation.n_active_cells());
     VectorTools::integrate_difference(dof_handler,
                                       locally_relevant_solution,
-                                      Solution<dim>(),
+                                      ReentrantCorner<dim>(),
                                       difference_per_cell,
                                       quadrature_collection,
                                       VectorTools::L2_norm);
@@ -1578,7 +1512,7 @@ namespace Poisson
 
     VectorTools::integrate_difference(dof_handler,
                                       locally_relevant_solution,
-                                      Solution<dim>(),
+                                      ReentrantCorner<dim>(),
                                       difference_per_cell,
                                       quadrature_collection,
                                       VectorTools::H1_norm);
