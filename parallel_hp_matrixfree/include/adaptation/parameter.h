@@ -25,7 +25,8 @@ namespace Adaptation
   class Parameters : public dealii::ParameterAcceptor
   {
   public:
-    Parameters() : dealii::ParameterAcceptor("adaptation")
+    Parameters()
+      : dealii::ParameterAcceptor("adaptation")
     {
       min_level = 5;
       add_parameter("minlevel", min_level);
@@ -68,7 +69,7 @@ namespace Adaptation
     template <int dim, typename VectorType, int spacedim>
     friend class hpLegendre;
   };
-}
+} // namespace Adaptation
 
 
 #endif

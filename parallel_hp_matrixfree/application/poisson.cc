@@ -19,10 +19,9 @@
 //
 // Include files
 // TODO: need cleanup
-#include <deal.II/base/quadrature_lib.h>
 #include <deal.II/base/function.h>
+#include <deal.II/base/quadrature_lib.h>
 #include <deal.II/base/timer.h>
-
 #include <deal.II/lac/generic_linear_algebra.h>
 
 // uncomment the following \#define if you have PETSc and Trilinos installed
@@ -47,52 +46,42 @@ namespace LA
 #endif
 } // namespace LA
 
-#include <deal.II/lac/la_parallel_vector.h>
-
-
-#include <deal.II/lac/vector.h>
-#include <deal.II/lac/full_matrix.h>
-#include <deal.II/lac/solver_cg.h>
-#include <deal.II/lac/affine_constraints.h>
-#include <deal.II/lac/dynamic_sparsity_pattern.h>
-
+#include <adaptation/base.h>
+#include <adaptation/h.h>
+#include <adaptation/hp_fourier.h>
+#include <adaptation/hp_history.h>
+#include <adaptation/hp_legendre.h>
+#include <adaptation/parameter.h>
+#include <deal.II/base/conditional_ostream.h>
+#include <deal.II/base/geometric_utilities.h>
+#include <deal.II/base/index_set.h>
+#include <deal.II/base/mpi.h>
+#include <deal.II/base/parameter_acceptor.h>
+#include <deal.II/base/parameter_handler.h>
+#include <deal.II/base/utilities.h>
+#include <deal.II/distributed/error_predictor.h>
+#include <deal.II/distributed/grid_refinement.h>
+#include <deal.II/distributed/tria.h>
+#include <deal.II/dofs/dof_accessor.h>
+#include <deal.II/dofs/dof_handler.h>
+#include <deal.II/dofs/dof_tools.h>
+#include <deal.II/fe/fe_q.h>
+#include <deal.II/fe/fe_series.h>
+#include <deal.II/fe/fe_values.h>
 #include <deal.II/grid/grid_generator.h>
 #include <deal.II/grid/tria_accessor.h>
 #include <deal.II/grid/tria_iterator.h>
-#include <deal.II/dofs/dof_handler.h>
-#include <deal.II/dofs/dof_accessor.h>
-#include <deal.II/dofs/dof_tools.h>
-#include <deal.II/fe/fe_values.h>
-#include <deal.II/fe/fe_q.h>
-#include <deal.II/numerics/vector_tools.h>
-#include <deal.II/numerics/data_out.h>
-#include <deal.II/numerics/error_estimator.h>
-
-#include <deal.II/base/utilities.h>
-#include <deal.II/base/conditional_ostream.h>
-#include <deal.II/base/index_set.h>
-#include <deal.II/lac/sparsity_tools.h>
-#include <deal.II/distributed/tria.h>
-#include <deal.II/distributed/grid_refinement.h>
-
-
-#include <deal.II/distributed/error_predictor.h>
-
 #include <deal.II/hp/fe_collection.h>
 #include <deal.II/hp/refinement.h>
-
-#include <deal.II/fe/fe_series.h>
-
-#include <deal.II/numerics/smoothness_estimator.h>
-
-#include <deal.II/base/geometric_utilities.h>
-#include <deal.II/base/mpi.h>
-#include <deal.II/base/parameter_handler.h>
-#include <deal.II/base/parameter_acceptor.h>
-
-#include <deal.II/matrix_free/matrix_free.h>
+#include <deal.II/lac/affine_constraints.h>
+#include <deal.II/lac/dynamic_sparsity_pattern.h>
+#include <deal.II/lac/full_matrix.h>
+#include <deal.II/lac/la_parallel_vector.h>
+#include <deal.II/lac/solver_cg.h>
+#include <deal.II/lac/sparsity_tools.h>
+#include <deal.II/lac/vector.h>
 #include <deal.II/matrix_free/fe_evaluation.h>
-
+#include <deal.II/matrix_free/matrix_free.h>
 #include <deal.II/multigrid/mg_coarse.h>
 #include <deal.II/multigrid/mg_constrained_dofs.h>
 #include <deal.II/multigrid/mg_matrix.h>
@@ -100,17 +89,14 @@ namespace LA
 #include <deal.II/multigrid/mg_tools.h>
 #include <deal.II/multigrid/mg_transfer_global_coarsening.h>
 #include <deal.II/multigrid/multigrid.h>
-
-#include <adaptation/base.h>
-#include <adaptation/h.h>
-#include <adaptation/hp_fourier.h>
-#include <adaptation/hp_history.h>
-#include <adaptation/hp_legendre.h>
-#include <adaptation/parameter.h>
+#include <deal.II/numerics/data_out.h>
+#include <deal.II/numerics/error_estimator.h>
+#include <deal.II/numerics/smoothness_estimator.h>
+#include <deal.II/numerics/vector_tools.h>
 
 #include <fstream>
-#include <memory>
 #include <iostream>
+#include <memory>
 #include <string>
 
 
@@ -122,7 +108,8 @@ namespace Poisson
 
   // Helper functions for this tutorial.
   template <typename MeshType>
-  MPI_Comm get_mpi_comm(const MeshType &mesh)
+  MPI_Comm
+  get_mpi_comm(const MeshType &mesh)
   {
     const auto *tria_parallel = dynamic_cast<
       const parallel::TriangulationBase<MeshType::dimension,
@@ -230,7 +217,7 @@ namespace Poisson
   private:
     unsigned int dim;
     unsigned int n_cycles;
-    std::string adaptation_type;
+    std::string  adaptation_type;
 
     Adaptation::Parameters prm_adaptation;
     OperatorParameters     prm_operator;
@@ -270,8 +257,8 @@ namespace Poisson
       Assert(alpha > 0, ExcLowerRange(alpha, 0));
     }
 
-    virtual double value(const Point<dim> & p,
-                         const unsigned int component = 0) const override;
+    virtual double
+    value(const Point<dim> &p, const unsigned int component = 0) const override;
 
     virtual Tensor<1, dim>
     gradient(const Point<dim> & p,
@@ -284,8 +271,9 @@ namespace Poisson
 
 
   template <int dim>
-  double Solution<dim>::value(const Point<dim> &p,
-                              const unsigned int /*component*/) const
+  double
+  Solution<dim>::value(const Point<dim> &p,
+                       const unsigned int /*component*/) const
   {
     const std::array<double, dim> p_sphere =
       GeometricUtilities::Coordinates::to_spherical(p);
@@ -296,8 +284,9 @@ namespace Poisson
 
 
   template <int dim>
-  Tensor<1, dim> Solution<dim>::gradient(const Point<dim> &p,
-                                         const unsigned int /*component*/) const
+  Tensor<1, dim>
+  Solution<dim>::gradient(const Point<dim> &p,
+                          const unsigned int /*component*/) const
   {
     const std::array<double, dim> p_sphere =
       GeometricUtilities::Coordinates::to_spherical(p);
@@ -331,38 +320,46 @@ namespace Poisson
     using value_type     = number;
     using VectorType     = LinearAlgebra::distributed::Vector<number>;
 
-    virtual void reinit(const hp::MappingCollection<dim> &mapping_collection,
-                        const DoFHandler<dim> &           dof_handler,
-                        const hp::QCollection<dim> &      quadrature_collection,
-                        const AffineConstraints<number> & constraints,
-                        VectorType &                      system_rhs) = 0;
+    virtual void
+    reinit(const hp::MappingCollection<dim> &mapping_collection,
+           const DoFHandler<dim> &           dof_handler,
+           const hp::QCollection<dim> &      quadrature_collection,
+           const AffineConstraints<number> & constraints,
+           VectorType &                      system_rhs) = 0;
 
 
-    virtual void vmult(VectorType &dst, const VectorType &src) const = 0;
+    virtual void
+    vmult(VectorType &dst, const VectorType &src) const = 0;
 
-    virtual const TrilinosWrappers::SparseMatrix &get_system_matrix() const = 0;
+    virtual const TrilinosWrappers::SparseMatrix &
+    get_system_matrix() const = 0;
 
-    virtual void initialize_dof_vector(VectorType &vec) const = 0;
+    virtual void
+    initialize_dof_vector(VectorType &vec) const = 0;
 
-    virtual void compute_inverse_diagonal(VectorType &diagonal) const
+    virtual void
+    compute_inverse_diagonal(VectorType &diagonal) const
     {
       (void)diagonal;
       Assert(false, ExcNotImplemented());
     }
 
-    types::global_dof_index m() const
+    types::global_dof_index
+    m() const
     {
       Assert(false, ExcNotImplemented());
       return 0;
     }
 
-    number el(unsigned int, unsigned int) const
+    number
+    el(unsigned int, unsigned int) const
     {
       Assert(false, ExcNotImplemented());
       return 0;
     }
 
-    void Tvmult(VectorType &dst, const VectorType &src) const
+    void
+    Tvmult(VectorType &dst, const VectorType &src) const
     {
       Assert(false, ExcNotImplemented());
       (void)dst;
@@ -378,11 +375,12 @@ namespace Poisson
   public:
     using VectorType = LinearAlgebra::distributed::Vector<number>;
 
-    void reinit(const hp::MappingCollection<dim> &mapping_collection,
-                const DoFHandler<dim> &           dof_handler,
-                const hp::QCollection<dim> &      quadrature_collection,
-                const AffineConstraints<number> & constraints,
-                VectorType &                      system_rhs) override
+    void
+    reinit(const hp::MappingCollection<dim> &mapping_collection,
+           const DoFHandler<dim> &           dof_handler,
+           const hp::QCollection<dim> &      quadrature_collection,
+           const AffineConstraints<number> & constraints,
+           VectorType &                      system_rhs) override
     {
 #ifndef DEAL_II_WITH_TRILINOS
       Assert(false, StandardExceptions::ExcNotImplemented());
@@ -454,22 +452,26 @@ namespace Poisson
 #endif
     }
 
-    void vmult(VectorType &dst, const VectorType &src) const override
+    void
+    vmult(VectorType &dst, const VectorType &src) const override
     {
       system_matrix.vmult(dst, src);
     }
 
-    void initialize_dof_vector(VectorType &vec) const override
+    void
+    initialize_dof_vector(VectorType &vec) const override
     {
       this->initialize_dof_vector_dealii(vec);
     }
 
-    void initialize_dof_vector_dealii(VectorType &vec) const
+    void
+    initialize_dof_vector_dealii(VectorType &vec) const
     {
       vec.reinit(partitioner_dealii);
     }
 
-    const TrilinosWrappers::SparseMatrix &get_system_matrix() const override
+    const TrilinosWrappers::SparseMatrix &
+    get_system_matrix() const override
     {
       return this->system_matrix;
     }
@@ -488,11 +490,12 @@ namespace Poisson
   public:
     using VectorType = LinearAlgebra::distributed::Vector<number>;
 
-    void reinit(const hp::MappingCollection<dim> &mapping,
-                const DoFHandler<dim> &           dof_handler,
-                const hp::QCollection<dim> &      quad,
-                const AffineConstraints<number> & constraints,
-                VectorType &                      system_rhs) override
+    void
+    reinit(const hp::MappingCollection<dim> &mapping,
+           const DoFHandler<dim> &           dof_handler,
+           const hp::QCollection<dim> &      quad,
+           const AffineConstraints<number> & constraints,
+           VectorType &                      system_rhs) override
     {
       this->constraints.copy_from(constraints);
 
@@ -563,7 +566,8 @@ namespace Poisson
 
 
 
-    void vmult(VectorType &dst, const VectorType &src) const override
+    void
+    vmult(VectorType &dst, const VectorType &src) const override
     {
       dst = 0.0; // TODO: needed?
 
@@ -601,14 +605,16 @@ namespace Poisson
     using FECellIntegrator = FEEvaluation<dim, -1, 0, 1, number>;
 
     // Perform cell integral on a cell batch.
-    void do_cell_integral(FECellIntegrator &integrator) const
+    void
+    do_cell_integral(FECellIntegrator &integrator) const
     {
       for (unsigned int q = 0; q < integrator.n_q_points; ++q)
         integrator.submit_gradient(integrator.get_gradient(q), q);
     }
 
     // Perform cell integral on a cell-batch range.
-    void do_cell_integral_range(
+    void
+    do_cell_integral_range(
       const dealii::MatrixFree<dim, number> &     matrix_free,
       VectorType &                                dst,
       const VectorType &                          src,
@@ -640,17 +646,20 @@ namespace Poisson
         }
     }
 
-    void initialize_dof_vector(VectorType &vec) const override
+    void
+    initialize_dof_vector(VectorType &vec) const override
     {
       matrix_free.initialize_dof_vector(vec);
     }
 
-    void initialize_dof_vector_dealii(VectorType &vec) const
+    void
+    initialize_dof_vector_dealii(VectorType &vec) const
     {
       vec.reinit(partitioner_dealii);
     }
 
-    const TrilinosWrappers::SparseMatrix &get_system_matrix() const override
+    const TrilinosWrappers::SparseMatrix &
+    get_system_matrix() const override
     {
       this->init_system_matrix(system_matrix);
       this->calculate_system_matrix(system_matrix);
@@ -659,7 +668,8 @@ namespace Poisson
     }
 
 
-    void init_system_matrix(TrilinosWrappers::SparseMatrix &system_matrix) const
+    void
+    init_system_matrix(TrilinosWrappers::SparseMatrix &system_matrix) const
     {
       const DoFHandler<dim> &dof_handler = this->matrix_free.get_dof_handler();
 
@@ -797,10 +807,11 @@ namespace Poisson
   {
   public:
     template <typename VectorType, typename Operator>
-    static void solve(SolverControl &   solver_control,
-                      const Operator &  system_matrix,
-                      VectorType &      dst,
-                      const VectorType &src)
+    static void
+    solve(SolverControl &   solver_control,
+          const Operator &  system_matrix,
+          VectorType &      dst,
+          const VectorType &src)
     {
       LA::MPI::PreconditionAMG::AdditionalData data;
       data.elliptic              = true;
@@ -816,8 +827,8 @@ namespace Poisson
 
 
 
-  std::vector<unsigned int> create_p_sequence(const unsigned int degree,
-                                              const std::string  p_sequence)
+  std::vector<unsigned int>
+  create_p_sequence(const unsigned int degree, const std::string p_sequence)
   {
     std::vector<unsigned int> degrees;
     degrees.push_back(degree);
@@ -883,13 +894,14 @@ namespace Poisson
 
   public:
     template <typename VectorType, typename Operator, int dim>
-    static void solve(SolverControl &                  solver_control,
-                      const Operator &                 system_matrix,
-                      VectorType &                     dst,
-                      const VectorType &               src,
-                      const hp::MappingCollection<dim> mapping_collection,
-                      const DoFHandler<dim> &          dof_handler,
-                      const hp::QCollection<dim> &     quadrature_collection)
+    static void
+    solve(SolverControl &                  solver_control,
+          const Operator &                 system_matrix,
+          VectorType &                     dst,
+          const VectorType &               src,
+          const hp::MappingCollection<dim> mapping_collection,
+          const DoFHandler<dim> &          dof_handler,
+          const hp::QCollection<dim> &     quadrature_collection)
     {
       Assert(false, ExcNotImplemented());
 
@@ -1233,12 +1245,16 @@ namespace Poisson
   public:
     PoissonProblem(const ProblemParameters &prm);
 
-    void run();
+    void
+    run();
 
   private:
-    void create_coarse_grid();
-    void setup_system();
-    void assemble_system();
+    void
+    create_coarse_grid();
+    void
+    setup_system();
+    void
+    assemble_system();
 
     template <typename Operator>
     void
@@ -1246,8 +1262,10 @@ namespace Poisson
           LinearAlgebra::distributed::Vector<double> &locally_relevant_solution,
           const LinearAlgebra::distributed::Vector<double> &system_rhs);
 
-    void compute_errors();
-    void output_results(const unsigned int cycle) const;
+    void
+    compute_errors();
+    void
+    output_results(const unsigned int cycle) const;
 
     MPI_Comm mpi_communicator;
 
@@ -1261,7 +1279,7 @@ namespace Poisson
     hp::QCollection<dim>       quadrature_collection;
 
     std::unique_ptr<hp::FEValues<dim>> fe_values_collection;
-    std::unique_ptr<Adaptation::Base> adaptation_strategy;
+    std::unique_ptr<Adaptation::Base>  adaptation_strategy;
 
     IndexSet locally_owned_dofs;
     IndexSet locally_relevant_dofs;
@@ -1298,11 +1316,13 @@ namespace Poisson
 
     mapping_collection.push_back(MappingQ1<dim>());
 
-    const unsigned int min_degree = ParameterAcceptor::prm.get_integer({"adaptation"}, "mindegree"),
-                       max_degree = ParameterAcceptor::prm.get_integer({"adaptation"}, "maxdegree");
-    for (unsigned int degree = min_degree;
-         degree <= max_degree;
-         ++degree)
+    const unsigned int min_degree =
+                         ParameterAcceptor::prm.get_integer({"adaptation"},
+                                                            "mindegree"),
+                       max_degree =
+                         ParameterAcceptor::prm.get_integer({"adaptation"},
+                                                            "maxdegree");
+    for (unsigned int degree = min_degree; degree <= max_degree; ++degree)
       {
         fe_collection.push_back(FE_Q<dim>(degree));
         quadrature_collection.push_back(QGauss<dim>(degree + 1));
@@ -1320,20 +1340,28 @@ namespace Poisson
       adaptation_strategy =
         std::make_unique<Adaptation::h<dim>>(prm.prm_adaptation,
                                              locally_relevant_solution,
-                                                  dof_handler,
-                                                  triangulation);
+                                             dof_handler,
+                                             triangulation);
     else if (prm.adaptation_type == "hp_Legendre")
-      adaptation_strategy = std::make_unique<Adaptation::hpLegendre<dim>>(
-        prm.prm_adaptation, locally_relevant_solution, dof_handler, triangulation, fe_collection);
+      adaptation_strategy =
+        std::make_unique<Adaptation::hpLegendre<dim>>(prm.prm_adaptation,
+                                                      locally_relevant_solution,
+                                                      dof_handler,
+                                                      triangulation,
+                                                      fe_collection);
     else if (prm.adaptation_type == "hp_Fourier")
-      adaptation_strategy = std::make_unique<Adaptation::hpFourier<dim>>(
-        prm.prm_adaptation, locally_relevant_solution, dof_handler, triangulation, fe_collection);
+      adaptation_strategy =
+        std::make_unique<Adaptation::hpFourier<dim>>(prm.prm_adaptation,
+                                                     locally_relevant_solution,
+                                                     dof_handler,
+                                                     triangulation,
+                                                     fe_collection);
     else if (prm.adaptation_type == "hp_History")
       adaptation_strategy =
         std::make_unique<Adaptation::hpHistory<dim>>(prm.prm_adaptation,
                                                      locally_relevant_solution,
-                                                 dof_handler,
-                                                 triangulation);
+                                                     dof_handler,
+                                                     triangulation);
     else
       AssertThrow(false, ExcNotImplemented());
   }
@@ -1341,7 +1369,8 @@ namespace Poisson
 
 
   template <int dim>
-  void PoissonProblem<dim>::create_coarse_grid()
+  void
+  PoissonProblem<dim>::create_coarse_grid()
   {
     TimerOutput::Scope t(computing_timer, "coarse grid");
 
@@ -1366,7 +1395,8 @@ namespace Poisson
 
 
   template <int dim>
-  void PoissonProblem<dim>::setup_system()
+  void
+  PoissonProblem<dim>::setup_system()
   {
     TimerOutput::Scope t(computing_timer, "setup");
 
@@ -1420,7 +1450,8 @@ namespace Poisson
 
 
   template <int dim>
-  void PoissonProblem<dim>::assemble_system()
+  void
+  PoissonProblem<dim>::assemble_system()
   {
     TimerOutput::Scope t(computing_timer, "assemble");
 
@@ -1475,7 +1506,8 @@ namespace Poisson
 
   template <int dim>
   template <typename Operator>
-  void PoissonProblem<dim>::solve(
+  void
+  PoissonProblem<dim>::solve(
     const Operator &                                  system_matrix,
     LinearAlgebra::distributed::Vector<double> &      locally_relevant_solution,
     const LinearAlgebra::distributed::Vector<double> &system_rhs)
@@ -1522,7 +1554,8 @@ namespace Poisson
 
 
   template <int dim>
-  void PoissonProblem<dim>::compute_errors()
+  void
+  PoissonProblem<dim>::compute_errors()
   {
     TimerOutput::Scope t(computing_timer, "compute errors");
 
@@ -1559,7 +1592,8 @@ namespace Poisson
 
 
   template <int dim>
-  void PoissonProblem<dim>::output_results(const unsigned int cycle) const
+  void
+  PoissonProblem<dim>::output_results(const unsigned int cycle) const
   {
     Vector<float> fe_degrees(triangulation.n_active_cells());
     for (const auto &cell : dof_handler.active_cell_iterators())
@@ -1588,7 +1622,8 @@ namespace Poisson
 
 
   template <int dim>
-  void PoissonProblem<dim>::run()
+  void
+  PoissonProblem<dim>::run()
   {
     pcout << "Running with "
 #ifdef USE_PETSC_LA
@@ -1612,7 +1647,7 @@ namespace Poisson
 
     for (unsigned int cycle = 0;
          cycle < (prm.adaptation_type != "hp_History" ? prm.n_cycles :
-                                                       prm.n_cycles + 1);
+                                                        prm.n_cycles + 1);
          ++cycle)
       {
         pcout << "Cycle " << cycle << ':' << std::endl;
@@ -1621,10 +1656,10 @@ namespace Poisson
           {
             create_coarse_grid();
 
-            const unsigned int min_level = ParameterAcceptor::prm.get_integer({"adaptation"}, "minlevel");
-            triangulation.refine_global(prm.adaptation_type != "hp_History" ?
-                                          min_level :
-                                          min_level - 1);
+            const unsigned int min_level =
+              ParameterAcceptor::prm.get_integer({"adaptation"}, "minlevel");
+            triangulation.refine_global(
+              prm.adaptation_type != "hp_History" ? min_level : min_level - 1);
           }
         else
           {
@@ -1666,7 +1701,8 @@ namespace Poisson
 // @sect4{main()}
 
 // The final function.
-int main(int argc, char *argv[])
+int
+main(int argc, char *argv[])
 {
   try
     {

@@ -17,39 +17,42 @@
 #define adaptation_hp_history_h
 
 
-#include <deal.II/distributed/error_predictor.h>
-#include <deal.II/distributed/tria.h>
-
-#include <deal.II/dofs/dof_handler.h>
-
-#include <deal.II/hp/q_collection.h>
-
-#include <deal.II/lac/vector.h>
-#include <deal.II/lac/la_parallel_vector.h>
-
 #include <adaptation/base.h>
 #include <adaptation/parameter.h>
+#include <deal.II/distributed/error_predictor.h>
+#include <deal.II/distributed/tria.h>
+#include <deal.II/dofs/dof_handler.h>
+#include <deal.II/hp/q_collection.h>
+#include <deal.II/lac/la_parallel_vector.h>
+#include <deal.II/lac/vector.h>
 
 
 namespace Adaptation
 {
-  template <int dim, typename VectorType = dealii::LinearAlgebra::distributed::Vector<double>, int spacedim = dim>
+  template <int dim,
+            typename VectorType =
+              dealii::LinearAlgebra::distributed::Vector<double>,
+            int spacedim = dim>
   class hpHistory : public Base
   {
   public:
-    hpHistory(const Parameters &               prm,
-      VectorType & locally_relevant_solution,
-      dealii::DoFHandler<dim, spacedim> &                          dof_handler,
-      dealii::parallel::distributed::Triangulation<dim, spacedim> &triangulation);
+    hpHistory(const Parameters &                 prm,
+              VectorType &                       locally_relevant_solution,
+              dealii::DoFHandler<dim, spacedim> &dof_handler,
+              dealii::parallel::distributed::Triangulation<dim, spacedim>
+                &triangulation);
 
-    virtual void estimate_mark_refine() override;
-    virtual const dealii::Vector<float>& get_error_estimates() const override;
-    virtual const dealii::Vector<float>& get_hp_indicators() const override;
+    virtual void
+    estimate_mark_refine() override;
+    virtual const dealii::Vector<float> &
+    get_error_estimates() const override;
+    virtual const dealii::Vector<float> &
+    get_hp_indicators() const override;
 
   protected:
     const Parameters &prm;
 
-    VectorType & locally_relevant_solution;
+    VectorType &locally_relevant_solution;
 
     dealii::DoFHandler<dim, spacedim> &                          dof_handler;
     dealii::parallel::distributed::Triangulation<dim, spacedim> &triangulation;
@@ -57,13 +60,13 @@ namespace Adaptation
     dealii::hp::QCollection<dim - 1> face_quadrature_collection;
 
     dealii::parallel::distributed::ErrorPredictor<dim> error_predictor;
-    dealii::Vector<float> error_predictions;
-    bool          init_step;
+    dealii::Vector<float>                              error_predictions;
+    bool                                               init_step;
 
     dealii::Vector<float> error_estimates;
     dealii::Vector<float> hp_indicators;
   };
-}
+} // namespace Adaptation
 
 
 #endif

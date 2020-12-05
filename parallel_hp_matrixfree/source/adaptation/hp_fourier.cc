@@ -14,16 +14,12 @@
 // ---------------------------------------------------------------------
 
 
+#include <adaptation/hp_fourier.h>
 #include <deal.II/base/quadrature_lib.h>
-
 #include <deal.II/distributed/grid_refinement.h>
-
 #include <deal.II/hp/refinement.h>
-
 #include <deal.II/numerics/error_estimator.h>
 #include <deal.II/numerics/smoothness_estimator.h>
-
-#include <adaptation/hp_fourier.h>
 
 using namespace dealii;
 
@@ -31,16 +27,17 @@ using namespace dealii;
 namespace Adaptation
 {
   template <int dim, typename VectorType, int spacedim>
-  hpFourier<dim, VectorType, spacedim>::hpFourier(const Parameters &               prm,
-                                                      VectorType & locally_relevant_solution,
-                                                      DoFHandler<dim, spacedim> &                          dof_handler,
-                                                      parallel::distributed::Triangulation<dim, spacedim> &triangulation,
-                                                      hp::FECollection<dim> &                    fe_collection)
-      : prm(prm)
-      , locally_relevant_solution(locally_relevant_solution)
-      , dof_handler(dof_handler)
-      , triangulation(triangulation)
-      , fourier(SmoothnessEstimator::Fourier::default_fe_series(fe_collection))
+  hpFourier<dim, VectorType, spacedim>::hpFourier(
+    const Parameters &         prm,
+    VectorType &               locally_relevant_solution,
+    DoFHandler<dim, spacedim> &dof_handler,
+    parallel::distributed::Triangulation<dim, spacedim> &triangulation,
+    hp::FECollection<dim> &                              fe_collection)
+    : prm(prm)
+    , locally_relevant_solution(locally_relevant_solution)
+    , dof_handler(dof_handler)
+    , triangulation(triangulation)
+    , fourier(SmoothnessEstimator::Fourier::default_fe_series(fe_collection))
   {
     Assert(prm.min_level <= prm.max_level,
            ExcMessage(
@@ -60,8 +57,7 @@ namespace Adaptation
   hpFourier<dim, VectorType, spacedim>::estimate_mark_refine()
   {
     // error estimates
-    error_estimates.grow_or_shrink(
-      triangulation.n_active_cells());
+    error_estimates.grow_or_shrink(triangulation.n_active_cells());
 
     KellyErrorEstimator<dim>::estimate(
       dof_handler,
@@ -75,12 +71,14 @@ namespace Adaptation
       /*subdomain_id=*/numbers::invalid_subdomain_id,
       /*material_id=*/numbers::invalid_material_id,
       /*strategy=*/
-      KellyErrorEstimator<
-        dim>::Strategy::face_diameter_over_twice_max_degree);
+      KellyErrorEstimator<dim>::Strategy::face_diameter_over_twice_max_degree);
 
     // flag cells
     parallel::distributed::GridRefinement::refine_and_coarsen_fixed_number(
-      triangulation, error_estimates, prm.total_refine_fraction, prm.total_coarsen_fraction);
+      triangulation,
+      error_estimates,
+      prm.total_refine_fraction,
+      prm.total_coarsen_fraction);
 
     // hp indicators
     hp_indicators.grow_or_shrink(triangulation.n_active_cells());
@@ -108,7 +106,7 @@ namespace Adaptation
 
 
   template <int dim, typename VectorType, int spacedim>
-  const Vector<float>&
+  const Vector<float> &
   hpFourier<dim, VectorType, spacedim>::get_error_estimates() const
   {
     return error_estimates;
@@ -117,7 +115,7 @@ namespace Adaptation
 
 
   template <int dim, typename VectorType, int spacedim>
-  const Vector<float>&
+  const Vector<float> &
   hpFourier<dim, VectorType, spacedim>::get_hp_indicators() const
   {
     return hp_indicators;
@@ -128,4 +126,4 @@ namespace Adaptation
   // explicit instantiations
   template class hpFourier<2>;
   template class hpFourier<3>;
-}
+} // namespace Adaptation

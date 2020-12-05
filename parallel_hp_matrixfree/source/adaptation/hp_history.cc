@@ -14,15 +14,11 @@
 // ---------------------------------------------------------------------
 
 
-#include <deal.II/base/quadrature_lib.h>
-
-#include <deal.II/distributed/grid_refinement.h>
-
-#include <deal.II/hp/refinement.h>
-
-#include <deal.II/numerics/error_estimator.h>
-
 #include <adaptation/hp_history.h>
+#include <deal.II/base/quadrature_lib.h>
+#include <deal.II/distributed/grid_refinement.h>
+#include <deal.II/hp/refinement.h>
+#include <deal.II/numerics/error_estimator.h>
 
 using namespace dealii;
 
@@ -30,16 +26,17 @@ using namespace dealii;
 namespace Adaptation
 {
   template <int dim, typename VectorType, int spacedim>
-  hpHistory<dim, VectorType, spacedim>::hpHistory(const Parameters &               prm,
-                                                      VectorType & locally_relevant_solution,
-                                                      DoFHandler<dim, spacedim> &                          dof_handler,
-                                                      parallel::distributed::Triangulation<dim, spacedim> &triangulation)
-      : prm(prm)
-      , locally_relevant_solution(locally_relevant_solution)
-      , dof_handler(dof_handler)
-      , triangulation(triangulation)
-      , error_predictor(dof_handler)
-      , init_step(true)
+  hpHistory<dim, VectorType, spacedim>::hpHistory(
+    const Parameters &         prm,
+    VectorType &               locally_relevant_solution,
+    DoFHandler<dim, spacedim> &dof_handler,
+    parallel::distributed::Triangulation<dim, spacedim> &triangulation)
+    : prm(prm)
+    , locally_relevant_solution(locally_relevant_solution)
+    , dof_handler(dof_handler)
+    , triangulation(triangulation)
+    , error_predictor(dof_handler)
+    , init_step(true)
   {
     Assert(prm.min_level <= prm.max_level,
            ExcMessage(
@@ -59,8 +56,7 @@ namespace Adaptation
   hpHistory<dim, VectorType, spacedim>::estimate_mark_refine()
   {
     // error estimates
-    error_estimates.grow_or_shrink(
-      triangulation.n_active_cells());
+    error_estimates.grow_or_shrink(triangulation.n_active_cells());
 
     KellyErrorEstimator<dim>::estimate(
       dof_handler,
@@ -74,8 +70,7 @@ namespace Adaptation
       /*subdomain_id=*/numbers::invalid_subdomain_id,
       /*material_id=*/numbers::invalid_material_id,
       /*strategy=*/
-      KellyErrorEstimator<
-        dim>::Strategy::face_diameter_over_twice_max_degree);
+      KellyErrorEstimator<dim>::Strategy::face_diameter_over_twice_max_degree);
 
     if (init_step)
       {
@@ -90,14 +85,16 @@ namespace Adaptation
       {
         // flag cells
         parallel::distributed::GridRefinement::refine_and_coarsen_fixed_number(
-          triangulation, error_estimates, prm.total_refine_fraction, prm.total_coarsen_fraction);
+          triangulation,
+          error_estimates,
+          prm.total_refine_fraction,
+          prm.total_coarsen_fraction);
 
         // hp indicators
         hp_indicators.grow_or_shrink(triangulation.n_active_cells());
 
         for (unsigned int i = 0; i < triangulation.n_active_cells(); ++i)
-          hp_indicators(i) =
-            error_predictions(i) - error_estimates(i);
+          hp_indicators(i) = error_predictions(i) - error_estimates(i);
 
         const float global_minimum =
           Utilities::MPI::min(*std::min_element(hp_indicators.begin(),
@@ -138,15 +135,14 @@ namespace Adaptation
 
     triangulation.execute_coarsening_and_refinement();
 
-    error_predictions.grow_or_shrink(
-      triangulation.n_active_cells());
+    error_predictions.grow_or_shrink(triangulation.n_active_cells());
     error_predictor.unpack(error_predictions);
   }
 
 
 
   template <int dim, typename VectorType, int spacedim>
-  const Vector<float>&
+  const Vector<float> &
   hpHistory<dim, VectorType, spacedim>::get_error_estimates() const
   {
     return error_estimates;
@@ -155,7 +151,7 @@ namespace Adaptation
 
 
   template <int dim, typename VectorType, int spacedim>
-  const Vector<float>&
+  const Vector<float> &
   hpHistory<dim, VectorType, spacedim>::get_hp_indicators() const
   {
     return hp_indicators;
@@ -166,4 +162,4 @@ namespace Adaptation
   // explicit instantiations
   template class hpHistory<2>;
   template class hpHistory<3>;
-}
+} // namespace Adaptation

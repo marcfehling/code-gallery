@@ -25,11 +25,14 @@ namespace Adaptation
   class Base
   {
   public:
-    virtual void estimate_mark_refine() = 0;
-    virtual const dealii::Vector<float>& get_error_estimates() const = 0;
-    virtual const dealii::Vector<float>& get_hp_indicators() const = 0;
+    virtual void
+    estimate_mark_refine() = 0;
+    virtual const dealii::Vector<float> &
+    get_error_estimates() const = 0;
+    virtual const dealii::Vector<float> &
+    get_hp_indicators() const = 0;
   };
-}
+} // namespace Adaptation
 
 
 #endif
