@@ -17,11 +17,14 @@
 #define adaptation_hp_history_h
 
 
+#include <deal.II/base/smartpointer.h>
+
 #include <deal.II/distributed/error_predictor.h>
 #include <deal.II/distributed/tria.h>
 
 #include <deal.II/dofs/dof_handler.h>
 
+#include <deal.II/hp/fe_collection.h>
 #include <deal.II/hp/q_collection.h>
 
 #include <deal.II/lac/la_parallel_vector.h>
@@ -40,9 +43,10 @@ namespace Adaptation
   class hpHistory : public Base
   {
   public:
-    hpHistory(const Parameters &                 prm,
-              VectorType &                       locally_relevant_solution,
-              dealii::DoFHandler<dim, spacedim> &dof_handler,
+    hpHistory(const Parameters &prm,
+              const VectorType &locally_relevant_solution,
+              const dealii::hp::FECollection<dim, spacedim> &fe_collection,
+              dealii::DoFHandler<dim, spacedim> &            dof_handler,
               dealii::parallel::distributed::Triangulation<dim, spacedim>
                 &triangulation);
 
@@ -56,18 +60,19 @@ namespace Adaptation
   protected:
     const Parameters &prm;
 
-    VectorType &locally_relevant_solution;
+    dealii::SmartPointer<const VectorType> locally_relevant_solution;
+    dealii::SmartPointer<dealii::DoFHandler<dim, spacedim>> dof_handler;
+    dealii::SmartPointer<
+      dealii::parallel::distributed::Triangulation<dim, spacedim>>
+      triangulation;
 
-    dealii::DoFHandler<dim, spacedim> &                          dof_handler;
-    dealii::parallel::distributed::Triangulation<dim, spacedim> &triangulation;
+    dealii::parallel::distributed::ErrorPredictor<dim> error_predictor;
+    bool                                               init_step;
 
     dealii::hp::QCollection<dim - 1> face_quadrature_collection;
 
-    dealii::parallel::distributed::ErrorPredictor<dim> error_predictor;
-    dealii::Vector<float>                              error_predictions;
-    bool                                               init_step;
-
     dealii::Vector<float> error_estimates;
+    dealii::Vector<float> error_predictions;
     dealii::Vector<float> hp_indicators;
   };
 } // namespace Adaptation

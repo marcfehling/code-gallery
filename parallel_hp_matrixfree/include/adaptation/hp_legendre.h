@@ -17,6 +17,8 @@
 #define adaptation_hp_legendre_h
 
 
+#include <deal.II/base/smartpointer.h>
+
 #include <deal.II/distributed/tria.h>
 
 #include <deal.II/dofs/dof_handler.h>
@@ -42,12 +44,12 @@ namespace Adaptation
   class hpLegendre : public Base
   {
   public:
-    hpLegendre(const Parameters &                 prm,
-               VectorType &                       locally_relevant_solution,
-               dealii::DoFHandler<dim, spacedim> &dof_handler,
+    hpLegendre(const Parameters &prm,
+               const VectorType &locally_relevant_solution,
+               const dealii::hp::FECollection<dim, spacedim> &fe_collection,
+               dealii::DoFHandler<dim, spacedim> &            dof_handler,
                dealii::parallel::distributed::Triangulation<dim, spacedim>
-                 &                            triangulation,
-               dealii::hp::FECollection<dim> &fe_collection);
+                 &triangulation);
 
     virtual void
     estimate_mark_refine() override;
@@ -59,14 +61,15 @@ namespace Adaptation
   protected:
     const Parameters &prm;
 
-    VectorType &locally_relevant_solution;
-
-    dealii::DoFHandler<dim, spacedim> &                          dof_handler;
-    dealii::parallel::distributed::Triangulation<dim, spacedim> &triangulation;
-
-    dealii::hp::QCollection<dim - 1> face_quadrature_collection;
+    dealii::SmartPointer<const VectorType> locally_relevant_solution;
+    dealii::SmartPointer<dealii::DoFHandler<dim, spacedim>> dof_handler;
+    dealii::SmartPointer<
+      dealii::parallel::distributed::Triangulation<dim, spacedim>>
+      triangulation;
 
     dealii::FESeries::Legendre<dim> legendre;
+
+    dealii::hp::QCollection<dim - 1> face_quadrature_collection;
 
     dealii::Vector<float> error_estimates;
     dealii::Vector<float> hp_indicators;

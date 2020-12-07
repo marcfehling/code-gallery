@@ -13,36 +13,30 @@
 //
 // ---------------------------------------------------------------------
 
-#ifndef reentrant_corner_h
-#define reentrant_corner_h
+#ifndef function_factory_h
+#define function_factory_h
 
 
+#include <deal.II/base/exceptions.h>
 #include <deal.II/base/function.h>
-#include <deal.II/base/point.h>
-#include <deal.II/base/tensor.h>
+
+#include <function/reentrant_corner.h>
 
 
-template <int dim>
-class ReentrantCorner : public dealii::Function<dim>
+namespace Factory
 {
-public:
-  ReentrantCorner(const double alpha = 2. / 3.);
-
-  virtual double
-  value(const dealii::Point<dim> &p,
-        const unsigned int        component = 0) const override;
-
-  virtual dealii::Tensor<1, dim>
-  gradient(const dealii::Point<dim> &p,
-           const unsigned int        component = 0) const override;
-
-  virtual double
-  laplacian(const dealii::Point<dim> &p,
-            const unsigned int        component = 0) const override;
-
-private:
-  const double alpha;
-};
+  template <int dim, typename... Args>
+  std::unique_ptr<dealii::Function<dim>>
+  create_function(std::string type, Args &...args)
+  {
+    if (type == "zero")
+      return std::make_unique<dealii::Functions::ZeroFunction<dim>>(args...);
+    else if (type == "reentrant corner")
+      return std::make_unique<ReentrantCorner<dim>>(args...);
+    else
+      Assert(false, dealii::ExcNotImplemented());
+  }
+} // namespace Factory
 
 
 #endif

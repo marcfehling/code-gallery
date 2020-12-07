@@ -17,7 +17,9 @@
 #include <deal.II/base/exceptions.h>
 #include <deal.II/base/geometric_utilities.h>
 
-#include <functions/reentrant_corner.h>
+#include <function/reentrant_corner.h>
+
+#include <cmath>
 
 using namespace dealii;
 
@@ -68,16 +70,6 @@ ReentrantCorner<dim>::gradient(const dealii::Point<dim> &p,
   ret[1] = ret_sphere[0] * std::sin(p_sphere[1]) +
            ret_sphere[1] * std::cos(p_sphere[1]);
   return ret;
-}
-
-
-
-template <int dim>
-double
-ReentrantCorner<dim>::laplacian(const dealii::Point<dim> & /*p*/,
-                                const unsigned int /*component*/) const
-{
-  return 0;
 }
 
 

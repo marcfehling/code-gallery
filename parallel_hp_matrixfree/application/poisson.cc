@@ -98,13 +98,9 @@ namespace LA
 #include <deal.II/numerics/smoothness_estimator.h>
 #include <deal.II/numerics/vector_tools.h>
 
-#include <adaptation/base.h>
-#include <adaptation/h.h>
-#include <adaptation/hp_fourier.h>
-#include <adaptation/hp_history.h>
-#include <adaptation/hp_legendre.h>
+#include <adaptation/factory.h>
 #include <adaptation/parameter.h>
-#include <functions/reentrant_corner.h>
+#include <function/factory.h>
 
 #include <fstream>
 #include <iostream>
@@ -1220,6 +1216,10 @@ namespace Poisson
     std::unique_ptr<hp::FEValues<dim>> fe_values_collection;
     std::unique_ptr<Adaptation::Base>  adaptation_strategy;
 
+    std::unique_ptr<Function<dim>> boundary_function;
+    std::unique_ptr<Function<dim>> solution_function;
+    std::unique_ptr<Function<dim>> rhs_function;
+
     IndexSet locally_owned_dofs;
     IndexSet locally_relevant_dofs;
 
@@ -1253,56 +1253,39 @@ namespace Poisson
   {
     TimerOutput::Scope t(computing_timer, "init");
 
+    // prepare collections
     mapping_collection.push_back(MappingQ1<dim>());
 
-    const unsigned int min_degree =
-                         ParameterAcceptor::prm.get_integer({"adaptation"},
-                                                            "mindegree"),
-                       max_degree =
-                         ParameterAcceptor::prm.get_integer({"adaptation"},
-                                                            "maxdegree");
+    const unsigned int min_degree = prm.prm_adaptation.min_degree,
+                       max_degree = prm.prm_adaptation.max_degree;
     for (unsigned int degree = min_degree; degree <= max_degree; ++degree)
       {
         fe_collection.push_back(FE_Q<dim>(degree));
         quadrature_collection.push_back(QGauss<dim>(degree + 1));
       }
 
+    // prepare fe values
     fe_values_collection =
       std::make_unique<hp::FEValues<dim>>(fe_collection,
                                           quadrature_collection,
-                                          update_gradients |
+                                          update_values | update_gradients |
                                             update_quadrature_points |
                                             update_JxW_values);
     fe_values_collection->precalculate_fe_values();
 
-    if (prm.adaptation_type == "h")
-      adaptation_strategy =
-        std::make_unique<Adaptation::h<dim>>(prm.prm_adaptation,
-                                             locally_relevant_solution,
-                                             dof_handler,
-                                             triangulation);
-    else if (prm.adaptation_type == "hp_Legendre")
-      adaptation_strategy =
-        std::make_unique<Adaptation::hpLegendre<dim>>(prm.prm_adaptation,
-                                                      locally_relevant_solution,
-                                                      dof_handler,
-                                                      triangulation,
-                                                      fe_collection);
-    else if (prm.adaptation_type == "hp_Fourier")
-      adaptation_strategy =
-        std::make_unique<Adaptation::hpFourier<dim>>(prm.prm_adaptation,
-                                                     locally_relevant_solution,
-                                                     dof_handler,
-                                                     triangulation,
-                                                     fe_collection);
-    else if (prm.adaptation_type == "hp_History")
-      adaptation_strategy =
-        std::make_unique<Adaptation::hpHistory<dim>>(prm.prm_adaptation,
-                                                     locally_relevant_solution,
-                                                     dof_handler,
-                                                     triangulation);
-    else
-      AssertThrow(false, ExcNotImplemented());
+    // choose functions
+    boundary_function = Factory::create_function<dim>("reentrant corner");
+    solution_function = Factory::create_function<dim>("reentrant corner");
+    rhs_function      = Factory::create_function<dim>("zero");
+
+    // choose adaptation strategy
+    adaptation_strategy =
+      Factory::create_adaptation<dim>(prm.adaptation_type,
+                                      prm.prm_adaptation,
+                                      locally_relevant_solution,
+                                      fe_collection,
+                                      dof_handler,
+                                      triangulation);
   }
 
 
@@ -1354,7 +1337,7 @@ namespace Poisson
     DoFTools::make_hanging_node_constraints(dof_handler, constraints);
     VectorTools::interpolate_boundary_values(dof_handler,
                                              0,
-                                             ReentrantCorner<dim>(),
+                                             *boundary_function,
                                              constraints);
 
 #ifdef DEBUG
@@ -1398,6 +1381,7 @@ namespace Poisson
     Vector<double>     cell_rhs;
 
     std::vector<types::global_dof_index> local_dof_indices;
+    std::vector<double>                  rhs_values;
 
     for (const auto &cell : dof_handler.active_cell_iterators())
       if (cell->is_locally_owned())
@@ -1415,6 +1399,10 @@ namespace Poisson
           const FEValues<dim> &fe_values =
             fe_values_collection->get_present_fe_values();
 
+          rhs_values.resize(fe_values.n_quadrature_points);
+          rhs_function->laplacian_list(fe_values.get_quadrature_points(),
+                                       rhs_values);
+
           for (unsigned int q_point = 0;
                q_point < fe_values.n_quadrature_points;
                ++q_point)
@@ -1425,6 +1413,11 @@ namespace Poisson
                     (fe_values.shape_grad(i, q_point) * // grad phi_i(x_q)
                      fe_values.shape_grad(j, q_point) * // grad phi_j(x_q)
                      fe_values.JxW(q_point));           // dx
+
+                cell_rhs(i) -=
+                  (fe_values.shape_value(i, q_point) * // phi_i(x_q)
+                   rhs_values[q_point] *               // f(x_q)
+                   fe_values.JxW(q_point));            // dx
               }
 
           local_dof_indices.resize(dofs_per_cell);
@@ -1501,7 +1494,7 @@ namespace Poisson
     Vector<float> difference_per_cell(triangulation.n_active_cells());
     VectorTools::integrate_difference(dof_handler,
                                       locally_relevant_solution,
-                                      ReentrantCorner<dim>(),
+                                      *solution_function,
                                       difference_per_cell,
                                       quadrature_collection,
                                       VectorTools::L2_norm);
@@ -1512,7 +1505,7 @@ namespace Poisson
 
     VectorTools::integrate_difference(dof_handler,
                                       locally_relevant_solution,
-                                      ReentrantCorner<dim>(),
+                                      *solution_function,
                                       difference_per_cell,
                                       quadrature_collection,
                                       VectorTools::H1_norm);

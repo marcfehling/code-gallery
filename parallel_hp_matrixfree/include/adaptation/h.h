@@ -17,10 +17,13 @@
 #define adaptation_h_h
 
 
+#include <deal.II/base/smartpointer.h>
+
 #include <deal.II/distributed/tria.h>
 
 #include <deal.II/dofs/dof_handler.h>
 
+#include <deal.II/hp/fe_collection.h>
 #include <deal.II/hp/q_collection.h>
 
 #include <deal.II/lac/la_parallel_vector.h>
@@ -39,9 +42,10 @@ namespace Adaptation
   class h : public Base
   {
   public:
-    h(const Parameters &                 prm,
-      VectorType &                       locally_relevant_solution,
-      dealii::DoFHandler<dim, spacedim> &dof_handler,
+    h(const Parameters &                             prm,
+      const VectorType &                             locally_relevant_solution,
+      const dealii::hp::FECollection<dim, spacedim> &fe_collection,
+      dealii::DoFHandler<dim, spacedim> &            dof_handler,
       dealii::parallel::distributed::Triangulation<dim, spacedim>
         &triangulation);
 
@@ -52,13 +56,14 @@ namespace Adaptation
     virtual const dealii::Vector<float> &
     get_hp_indicators() const override;
 
-  protected:
+  private:
     const Parameters &prm;
 
-    VectorType &locally_relevant_solution;
-
-    dealii::DoFHandler<dim, spacedim> &                          dof_handler;
-    dealii::parallel::distributed::Triangulation<dim, spacedim> &triangulation;
+    dealii::SmartPointer<const VectorType> locally_relevant_solution;
+    dealii::SmartPointer<dealii::DoFHandler<dim, spacedim>> dof_handler;
+    dealii::SmartPointer<
+      dealii::parallel::distributed::Triangulation<dim, spacedim>>
+      triangulation;
 
     dealii::hp::QCollection<dim - 1> face_quadrature_collection;
 
