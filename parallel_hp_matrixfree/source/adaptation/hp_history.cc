@@ -105,7 +105,8 @@ namespace Adaptation
         const float global_minimum =
           Utilities::MPI::min(*std::min_element(hp_indicators.begin(),
                                                 hp_indicators.end()),
-                              triangulation->get_communicator());
+                              triangulation->get_communicator()) - 1.;
+        // (- 1.) ensures that the smallest indicator is > 0
         if (global_minimum < 0)
           for (auto &indicator : hp_indicators)
             indicator -= global_minimum;
