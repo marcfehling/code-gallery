@@ -2,7 +2,7 @@ name: github-linux
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master, quiet ]
   pull_request:
     branches: [ master ]
   schedule:
@@ -60,7 +60,7 @@ jobs:
             if [ -e CMakeLists.txt ]
             then
               echo "Current project: ${dir}"
-              cmake -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} .
+              cmake --quiet -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} .
               make
             else
               echo "Skipping project: ${dir}"
