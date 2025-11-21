@@ -182,7 +182,7 @@ template <int dim> void HeatEquation<dim>::setup_system() {
   DynamicSparsityPattern dsp(locally_relevant_dofs);
   DoFTools::make_sparsity_pattern(dof_handler, dsp, constraints, true);
   SparsityTools::distribute_sparsity_pattern(
-      dsp, dof_handler.locally_owned_dofs(), mpi_communicator,
+      dsp,locally_owned_dofs, mpi_communicator,
       locally_relevant_dofs);
 
   system_matrix.reinit(locally_owned_dofs, locally_owned_dofs, dsp,
@@ -387,8 +387,8 @@ template <int dim> void HeatEquation<dim>::run() {
         << " on " << Utilities::MPI::n_mpi_processes(mpi_communicator)
         << " MPI rank(s)..." << std::endl;
 
-  const unsigned int initial_global_refinement = 12;//2;
-  const unsigned int n_adaptive_pre_refinement_steps = 0;//4;
+  const unsigned int initial_global_refinement = 2;//12;
+  const unsigned int n_adaptive_pre_refinement_steps = 4;//0;
   GridGenerator::hyper_L(triangulation);
   triangulation.refine_global(initial_global_refinement);
 
@@ -414,7 +414,7 @@ start_time_iteration:
     output_results();
   }
 
-  const double end_time = 1./500;//0.5;
+  const double end_time = 0.5;//1./500;
   while (time < end_time) {
   //while (time <= end_time) {
     time += time_step;
